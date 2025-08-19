@@ -48,7 +48,10 @@ def compute_tfidf(gtok_folder: str, universe_path: str, output_folder: str, *, i
     tfidf_folder = os.path.join(output_folder, "tf-idf")
     os.makedirs(tfidf_folder, exist_ok=True)
 
-    tokenizer = Tokenizer(universe_path)
+    if os.path.isfile(universe_path):
+        tokenizer = Tokenizer(universe_path)
+    else:
+        tokenizer = Tokenizer.from_pretrained(universe_path)
     special_ids = _special_token_ids(tokenizer)
 
     # Pass 1: compute document frequencies
