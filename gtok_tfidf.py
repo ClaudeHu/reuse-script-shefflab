@@ -87,8 +87,12 @@ def compute_tfidf(gtok_folder: str, universe_path: str, output_folder: str, *, i
 
     # Save IDF (keys as strings for JSON)
     idf_out = {str(k): v for k, v in idf.items()}
-    with open(os.path.join(output_folder, "idf.json"), "w") as f:
-        json.dump(idf_out, f)
+
+    np.savez(
+        os.path.join(output_folder, f"idf.npz"),
+        tokens=np.array(list(idf_out.keys()), dtype=np.int32),
+        idf=np.array(list(idf_out.values()), dtype=np.float64),
+    )
 
     # Pass 2: compute TF-IDF per file
     for path in tqdm(files, desc="Pass 2/2: computing TF-IDF"):
@@ -116,7 +120,7 @@ def compute_tfidf(gtok_folder: str, universe_path: str, output_folder: str, *, i
             np.savez(
                 os.path.join(tfidf_folder, f"{accession}.npz"),
                 tokens=np.array(list(tfidf_scores.keys()), dtype=np.int32),
-                scores=np.array(list(tfidf_scores.values()), dtype=np.float64),
+                tfidf=np.array(list(tfidf_scores.values()), dtype=np.float64),
             )
 
 
