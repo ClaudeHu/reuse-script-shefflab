@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from gtars.tokenizers import Tokenizer
 from gtars.utils import read_tokens_from_gtok
 from tqdm import tqdm
+import numpy as np
 
 
 def _special_token_ids(tokenizer: Tokenizer) -> Set[int]:
@@ -112,8 +113,11 @@ def compute_tfidf(gtok_folder: str, universe_path: str, output_folder: str, *, i
                 tfidf_scores[str(tid)] = tf * idf[tid]
 
         if tfidf_scores:
-            with open(os.path.join(tfidf_folder, f"{accession}.json"), "w") as f:
-                json.dump(tfidf_scores, f)
+            np.savez(
+                os.path.join(tfidf_folder, f"{accession}.npz"),
+                tokens=np.array(list(tfidf_scores.keys()), dtype=np.int32),
+                scores=np.array(list(tfidf_scores.values()), dtype=np.float64),
+            )
 
 
 def main():
