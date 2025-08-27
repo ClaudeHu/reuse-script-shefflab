@@ -14,6 +14,8 @@ def main(args):
     gtok_folder = args.gtok_folder
     os.makedirs(gtok_folder, exist_ok=True)
 
+    ongoing = args.ongoing
+
     # init_tokenizer
     if os.path.isfile(universe):
         tokenizer = Tokenizer(universe)
@@ -21,11 +23,15 @@ def main(args):
         tokenizer = Tokenizer.from_pretrained(universe)
 
     for bed_file in tqdm(os.listdir(bed_folder), "Tokenize each BED file"):
+
         accession = bed_file.replace(".bed.gz", "")
+        output_path = os.path.join(gtok_folder, f"{accession}.gtok")
+        if ongoing and os.path.isfile(output_path):
+            continue
         rs = RegionSet(os.path.join(bed_folder, bed_file))
         tokens = tokenizer.tokenize(rs)
         token_ids = tokenizer.encode(tokens)
-        write_tokens_to_gtok(os.path.join(gtok_folder, f"{accession}.gtok"), token_ids)
+        write_tokens_to_gtok(output_path, token_ids)
 
 
 if __name__ == "__main__":
@@ -34,6 +40,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "universe",
         help="Path to the universe bed, or repo of a huggingface model with universe",
+    )
+    parser.add_argument(
+        "--ongoing",
+        action="store_true",
+        default=False,
+        help="Continue unfinished",
     )
     parser.add_argument("gtok_folder", help="Path to folder of output gtok files")
 

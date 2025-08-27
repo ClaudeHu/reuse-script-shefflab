@@ -1,14 +1,14 @@
+import json
+import math
 import os
 import sys
-import math
-import json
-from typing import Dict, Iterable, Set
 from collections import Counter, defaultdict
+from typing import Dict, Iterable, Set
 
+import numpy as np
 from gtars.tokenizers import Tokenizer
 from gtars.utils import read_tokens_from_gtok
 from tqdm import tqdm
-import numpy as np
 
 
 def _special_token_ids(tokenizer: Tokenizer) -> Set[int]:
@@ -19,7 +19,11 @@ def _special_token_ids(tokenizer: Tokenizer) -> Set[int]:
             continue
         try:
             # encode a single token; tokenizer.encode(...) should return a list of ids
-            tid = tokenizer.encode(t)[0] if isinstance(tokenizer.encode(t), list) else tokenizer.encode(t)
+            tid = (
+                tokenizer.encode(t)[0]
+                if isinstance(tokenizer.encode(t), list)
+                else tokenizer.encode(t)
+            )
             ids.add(int(tid))
         except Exception:
             # be permissive: if a special token can't be encoded, just skip it
@@ -35,7 +39,13 @@ def _iter_gtok_files(folder: str) -> Iterable[str]:
     return files
 
 
-def compute_tfidf(gtok_folder: str, universe_path: str, output_folder: str, *, idf_smoothing: bool = True) -> None:
+def compute_tfidf(
+    gtok_folder: str,
+    universe_path: str,
+    output_folder: str,
+    *,
+    idf_smoothing: bool = True,
+) -> None:
     """
     Compute IDF over the corpus, then per-file TF-IDF (excluding special tokens).
     Writes:
@@ -126,7 +136,10 @@ def compute_tfidf(gtok_folder: str, universe_path: str, output_folder: str, *, i
 
 def main():
     if len(sys.argv) != 4:
-        print("Usage: python compute_tfidf.py <gtok_folder> <universe_path> <output_folder>", file=sys.stderr)
+        print(
+            "Usage: python compute_tfidf.py <gtok_folder> <universe_path> <output_folder>",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     gtok_folder = sys.argv[1]
