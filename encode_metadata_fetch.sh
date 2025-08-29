@@ -20,19 +20,27 @@ fi
 
 mkdir -p "$OUTPUT_DIR"
 
-# Count total number of non-empty lines
 TOTAL=$(grep -cve '^\s*$' "$ACCESSION_FILE")
 COUNT=0
+BAR_WIDTH=50
 
 while IFS= read -r ACC; do
-    if [ -z "$ACC" ]; then
-        continue
-    fi
-    COUNT=$((COUNT + 1))
-    echo -ne "[${COUNT}/${TOTAL}] Downloading $ACC...\r"
-    curl -sSL -H "Accept: application/json" \
+    [ -z "$ACC" ] && continue
+    
+    if curl -sSL -H "Accept: application/json" \
         "https://www.encodeproject.org/files/${ACC}/" \
-        -o "${OUTPUT_DIR}/${ACC}.json"
+        -o "${OUTPUT_DIR}/${ACC}.json"; then
+        COUNT=$((COUNT + 1))
+        PERCENT=$((COUNT * 100 / TOTAL))
+        FILLED=$((COUNT * BAR_WIDTH / TOTAL))
+        EMPTY=$((BAR_WIDTH - FILLED))
+        printf "\r[%s%s] %d%%" \
+            "$(printf '#%.0s' $(seq 1 $FILLED))" \
+            "$(printf ' %.0s' $(seq 1 $EMPTY))" \
+            "$PERCENT"
+    else
+        echo -e "\nFailed to download $ACC"
+    fi
 done < "$ACCESSION_FILE"
 
-echo -e "\nAll $TOTAL metadata JSON files have been downloaded to $OUTPUT_DIR"
+echo -e "\nDone: $TOTAL metadata JSON files processed, saved to $OUTPUT_DIR"
