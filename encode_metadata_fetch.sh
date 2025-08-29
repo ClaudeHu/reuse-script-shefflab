@@ -31,15 +31,15 @@ render_bar() {
   local count=$1 total=$2 width=$3
   local filled=$(( count * width / total ))
   local empty=$(( width - filled ))
-  printf "\r[%s%s] %3d%%" \
+  local percent=$(( count * 100 / total ))
+  printf "\r[%s%s] %3d%% (%d/%d)" \
     "$(printf '#%.0s' $(seq 1 $filled))" \
     "$(printf ' %.0s' $(seq 1 $empty))" \
-    $(( count * 100 / total ))
+    "$percent" "$count" "$total"
 }
 
-# read lines safely (handles last line without newline)
 while IFS= read -r ACC || [ -n "$ACC" ]; do
-  # trim whitespace + CRLF, skip blanks and comments
+  # trim whitespace and CRLF, skip blanks/comments
   ACC="$(echo "$ACC" | sed 's/\r$//' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
   [ -z "$ACC" ] && continue
   case "$ACC" in \#*) continue ;; esac
@@ -48,7 +48,6 @@ while IFS= read -r ACC || [ -n "$ACC" ]; do
   out="${OUTPUT_DIR}/${ACC}.json"
   url="https://www.encodeproject.org/${ENDPOINT}/${ACC}/"
 
-  # -f makes HTTP errors fail; -sS keeps stderr clean but shows errors
   if curl -fsSL -H "Accept: application/json" "$url" -o "$tmp"; then
     mv -f "$tmp" "$out"
   else
