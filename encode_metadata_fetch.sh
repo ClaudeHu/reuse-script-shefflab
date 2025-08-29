@@ -38,22 +38,42 @@ render_bar() {
     "$percent" "$count" "$total"
 }
 
+# track current temp file so we can clean it on interrupt
+CURRENT_TMP=""
+cleanup() {
+  if [ -n "${CURRENT_TMP:-}" ] && [ -f "$CURRENT_TMP" ]; then
+    rm -f "$CURRENT_TMP"
+  fi
+  echo -e "\nAborted. Partial downloads cleaned up."
+  exit 130
+}
+trap cleanup INT TERM
+
 while IFS= read -r ACC || [ -n "$ACC" ]; do
-  # trim whitespace and CRLF, skip blanks/comments
+  # trim whitespace + CRLF, skip blanks/comments
   ACC="$(echo "$ACC" | sed 's/\r$//' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
   [ -z "$ACC" ] && continue
   case "$ACC" in \#*) continue ;; esac
 
-  tmp="${OUTPUT_DIR}/.${ACC}.json.part"
   out="${OUTPUT_DIR}/${ACC}.json"
+  tmp="${OUTPUT_DIR}/.${ACC}.json.part"
   url="https://www.encodeproject.org/${ENDPOINT}/${ACC}/"
 
+  # Skip if already downloaded
+  if [ -f "$out" ]; then
+    COUNT=$((COUNT + 1))
+    render_bar "$COUNT" "$TOTAL" "$BAR_WIDTH"
+    continue
+  fi
+
+  CURRENT_TMP="$tmp"
   if curl -fsSL -H "Accept: application/json" "$url" -o "$tmp"; then
     mv -f "$tmp" "$out"
   else
     rm -f "$tmp" 2>/dev/null || true
     printf "\nFailed to download %s\n" "$ACC"
   fi
+  CURRENT_TMP=""
 
   COUNT=$((COUNT + 1))
   render_bar "$COUNT" "$TOTAL" "$BAR_WIDTH"
